@@ -1,25 +1,42 @@
-# pipeline.yaml
+# Define environments
+environments:
+  - name: development
 
+# Define agents
+agents:
+  - name: admin
+    resources: [docker]
+    environment_variables:
+      GOCD_AGENT_WORK_DIR: C:\Program Files (x86)\Go Agent
+      DOCKER_HOST: tcp://docker:2375
+    hostname: 127.0.0.1
+    operating_system: Windows 10
+    agent_state: Idle
+    free_space: "857.36 GB"
+
+# Define pipelines
 pipelines:
-  MyDockerPipeline:
-    group: docker
+  - name: GoCDPipeline
+    group: my_pipeline_group
+    label_template: '${COUNT}'
     materials:
-      git-repo:
-        git: https://github.com/htetgit/My-project.git
-        branch: master # or specify the branch you want to build
-        auto_update: true
-
+      git:
+        url: https://github.com/htetgit/My-project.git
+        branch: main
     stages:
       - name: Build
         jobs:
-          - name: BuildDockerImage
-            environment_variables:
-              DOCKER_BUILD_PATH: C:\Users\htety\OneDrive\Desktop\Test-Docker\Docker-demo
+          - name: Compile
+            agent: admin
             tasks:
               - exec:
-                  command: sh
-                  arguments:
-                    - -c
-                    - |
-                      cd $DOCKER_BUILD_PATH
-                      docker build -t first-pipeline/teasting101:latest .
+                  command: go build -o main .
+                  working_directory: C:\Program Files (x86)\Go Agent\work\GoCDPipeline\Build\Comiple
+      - name: Dockerize
+        jobs:
+          - name: BuildDockerImage
+            agent: admin
+            tasks:
+              - exec:
+                  command: docker build -t my-golang-app .
+                  working_directory: C:\Program Files (x86)\Go Agent\work\GoCDPipeline\Dockerize\BuildDockerImage
